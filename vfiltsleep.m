@@ -1,0 +1,104 @@
+
+% Just to check for filtered data in sub18
+% Whether there is significant difference in sleep VS drowsy/alert
+% In anat_wake dataset
+
+
+function vfiltsleep()
+
+filtdir = '/rds/project/tb419/rds-tb419-bekinschtein/Yingge/LZ/EEG/Passive/anat_wake/sub18/filtered';
+addpath(filtdir);
+
+% Read in data from CSV file, do anat_sleep first
+alert = readtable('sub18_aw_filt_4-13_alert.csv','TextType','string');
+drowsy = readtable('sub18_aw_filt_4-13_drowsy.csv','TextType','string');
+sleep = readtable('sub18_aw_filt_4-13_sleep.csv','TextType','string');
+% aw_table = readtable('Aw_average.csv','TextType','string');
+
+% Regional labels
+regions = {'FP', 'F', 'Cent','Anpos', 'Parie', 'Occi'}; % This works for passive_sleep
+
+ % Initialize cell array to store data
+    size_a = size(alert.F,1);
+    size_d = size(drowsy.F,1);
+    size_s = size(sleep.F,1);
+    data_a = zeros(size_a, 6);
+    data_d = zeros(size_d, 6);
+    data_s = zeros(size_s,6);
+
+% Assign values to corresponding matrices
+for j = 1:6
+        name = regions{j};
+        data_a(1:size_a,j) = alert.(name);
+        data_d(1:size_d,j) = drowsy.(name);
+        data_s(1:size_s,j) = sleep.(name);
+end
+
+
+% blue = [0.529 0.808 0.922];
+ % Find the longer dataset
+    if size_a > size_s
+        data_long = data_a;
+        data_short = data_s;
+        short = size_s;
+        long = size_a;
+        groups = {'alert','sleep'}; % Always has the longer dataset at the front
+    else
+        data_long = data_s;
+        data_short = data_a;
+        short = size_a;
+        long = size_s;
+        groups = {'sleep','alert'};
+    end
+    
+    % Add NaN values to the end of the shorter dataset
+    data_short = [data_short; NaN(long-short,size(data_short,2))];
+
+    % blue = [0.529 0.808 0.922];
+    for k = 1:6
+        l = data_long(:,k);
+        s = data_short(:,k);
+        violin([l,s],groups,[1,0.71,0.76],'k',0.4,'g','y');
+        %violin([l,s],groups);
+        legend('Distr','Mean','Median','Location','Northwest');
+        titl = regions{k}+" "+"for"+" "+"sub18"+" "+"(filtered)";
+        %titl = strcat(regions{k},' for','  ', subj,'(filtered)');
+        title(titl);
+        xlabel('state labels');
+        ylabel('Corresponding LZ epochs');
+    end
+
+if size_d > size_s
+        data_long = data_d;
+        data_short = data_s;
+        short = size_s;
+        long = size_d;
+        groups = {'drowsy','sleep'}; % Always has the longer dataset at the front
+    else
+        data_long = data_s;
+        data_short = data_d;
+        short = size_d;
+        long = size_s;
+        groups = {'sleep','drowsy'};
+ end
+    
+    % Add NaN values to the end of the shorter dataset
+    data_short = [data_short; NaN(long-short,size(data_short,2))];
+
+    % blue = [0.529 0.808 0.922];
+    for k = 1:6
+        l = data_long(:,k);
+        s = data_short(:,k);
+        violin([l,s],groups,[1,0.71,0.76],'k',0.4,'g','y');
+        %violin([l,s],groups);
+        legend('Distr','Mean','Median','Location','Northwest');
+        titl = regions{k}+" "+"for"+" "+"sub18"+" "+"(filtered)";
+        %titl = strcat(regions{k},' for','  ', subj,'(filtered)');
+        title(titl);
+        xlabel('state labels');
+        ylabel('Corresponding LZ epochs');
+    end
+
+
+
+end

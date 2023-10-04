@@ -1,0 +1,67 @@
+% This is the function to generate violin plot
+% From anat_sleep and anat_wake datasets (Passive)
+% The output should be e.g. within anat_sleep, a plot with LZ as vertical
+% axis and regions are horizontal axis, 2 groups (alert and drowsy) for
+% each property.
+
+
+function vfiltplot()
+
+presubdir = '/rds/project/tb419/rds-tb419-bekinschtein/Yingge/LZ/EEG/Passive/anat_wake/';
+fsubs = {'sub09','sub15','sub18'}; % filtered subjects
+regions = {'FP','F','Cent','Anpos','Parie','Occi'};
+
+for i = 1:3
+    subj = fsubs{i};
+    subdir = strcat(presubdir,subj,'/filtered/');
+    addpath(subdir);
+    alertfile = strcat(subj,'_aw_filt_4-13_alert.csv');
+    drowsyfile = strcat(subj,'_aw_filt_4-13_drowsy.csv');
+    alert = readtable(alertfile,'TextType','string');
+    drowsy = readtable(drowsyfile,'TextType','string');
+    % Initialize cell array to store data
+    size_a = size(alert.F,1);
+    size_d = size(drowsy.F,1);
+    data_a = zeros(size_a, 6);
+    data_d = zeros(size_d, 6);
+
+
+    for j = 1:6
+        name = regions{j};
+        data_a(1:size_a,j) = alert.(name);
+        data_d(1:size_d,j) = drowsy.(name);
+    end
+
+    % Find the longer dataset
+    if size_a > size_d
+        data_long = data_a;
+        data_short = data_d;
+        short = size_d;
+        long = size_a;
+        groups = {'alert','drowsy'}; % Always has the longer dataset at the front
+    else
+        data_long = data_d;
+        data_short = data_a;
+        short = size_a;
+        long = size_d;
+        groups = {'drowsy','alert'};
+    end
+    
+    % Add NaN values to the end of the shorter dataset
+    data_short = [data_short; NaN(long-short,size(data_short,2))];
+
+    % blue = [0.529 0.808 0.922];
+    for k = 1:6
+        l = data_long(:,k);
+        s = data_short(:,k);
+        violin([l,s],groups,[1,0.71,0.76],'k',0.4,'g','y');
+        legend('Distr','Mean','Median','Location','Northwest');
+        titl = regions{k}+" "+"for"+" "+subj+" "+"(filtered)";
+        %titl = strcat(regions{k},' for','  ', subj,'(filtered)');
+        title(titl);
+        xlabel('state labels');
+        ylabel('Corresponding LZ epochs');
+    end
+end
+
+end

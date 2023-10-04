@@ -1,0 +1,83 @@
+% This is the function to generate violin plot
+% From anat_sleep and anat_wake datasets (Passive)
+% The output should be e.g. within anat_sleep, a plot with LZ as vertical
+% axis and regions are horizontal axis, 2 groups (alert and drowsy) for
+% each property.
+
+
+function vplot_passive()
+
+passive_mean_dir = '/rds/project/tb419/rds-tb419-bekinschtein/Yingge/LZ/EEG/Passive';
+addpath(passive_mean_dir);
+
+% Read in data from CSV file, do anat_sleep first
+passive_mean = readtable('average_passive.csv','TextType','string');
+% aw_table = readtable('Aw_average.csv','TextType','string');
+
+% Define property labels as a string array
+ alertnames = {'FP_a','F_a','Cent_a','Anpos_a','Parie_a','Occi_a'};
+ drowsynames = {'FP_d','F_d','Cent_d','Anpos_d','Parie_d','Occi_d'};
+
+
+% Regional labels
+regions = {'FP', 'F', 'Cent','Anpos', 'Parie', 'Occi'};
+
+% Define groups (alert and drowsy)
+groups = {'alert','drowsy'};
+
+% Initialize cell array to store data
+data_d = zeros(26, length(regions));
+data_a = zeros(26, length(regions));
+
+% Extract data columns for each categorical property and convert to numeric arrays
+for i = 1:6
+    alertcol = alertnames{i};
+    drowsycol = drowsynames{i};
+    data_a(1:26,i) = (passive_mean.(alertcol));
+    data_d(1:26,i) = (passive_mean.(drowsycol));
+end
+
+blue = [0.529 0.808 0.922];
+
+for i = 1:length(regions)
+    alert = data_a(:,i);
+    drowsy = data_d(:,i);
+    violin([alert,drowsy],groups,[1,0.71,0.76],'k',0.4,'g','y');% Good color selection
+    hold on
+    scatter(ones(26,1), alert, 'filled', 'MarkerFaceColor', blue);
+    scatter(2*ones(26,1), drowsy, 'filled', 'MarkerFaceColor', blue);
+
+    % Add the lines connecting the data points for the same subjects
+    for j = 1:26
+        plot([1 2], [alert(j) drowsy(j)], 'Color', [0.5 0.5 0.5]);
+    end
+
+    % Add a legend
+    legend('Distr', 'Mean', 'Median','Location', 'Northwest');
+
+    % Add title, and axis labels
+    tit = strcat(regions{i},' in Passive dataset');
+    title(tit);
+    xlabel('State labels');
+    ylabel('Average LZ');
+
+end
+
+% Performing t-test
+% Generate two groups of data
+group1 = data_a;
+group2 = data_d;
+
+% Perform a two-sample t-test (ttest2 is for two independent variables)
+[h, p, ci, stats] = ttest(group1, group2);
+
+% Display the results
+fprintf('t = %g, p = %g\n', stats.tstat, p);
+if h
+    fprintf('The means of the two groups are significantly different.\n');
+else
+    fprintf('The means of the two groups are not significantly different.\n');
+end
+% It seems that the latter 3 brain regions has significant difference
+
+end
